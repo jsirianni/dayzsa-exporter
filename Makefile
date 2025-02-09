@@ -27,3 +27,7 @@ lint:
 .PHONY: test
 test:
 	go test -race ./...
+
+.PHONY: release-test
+release-test:
+	goreleaser release --snapshot --skip=publish --clean

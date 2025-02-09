@@ -3,6 +3,7 @@ builds:
     env:
       - CGO_ENABLED=0
     mod_timestamp: '{{ .CommitTimestamp }}'
+    main: ./cmd/dayzsa/
     goos:
       - linux
     goarch:
@@ -10,15 +11,8 @@ builds:
       - arm64
     binary: dayzsa-exporter
     flags:
-      - -race
       - -v
       - -trimpath
-    ldflags:
-      - s
-      - w
-      - -X github.com/jsirianni/dayzsa-exporter/version.gitTag=v{{ .Version }}
-      - -X github.com/jsirianni/dayzsa-exporter/version.gitCommit={{ .FullCommit }}
-      - -X github.com/jsirianni/dayzsa-exporter/config.CurrentEulaDate={{ .Env.EulaDate }}
 
 nfpms:
   - id: dayzsa-exporter
@@ -59,7 +53,7 @@ dockers:
       - dayzsa-exporter
     image_templates:
       - "ghcr.io/jsirianni/dayzsa-exporter-amd64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
-    dockerfile: ./Dockerfile
+    dockerfile: package/Dockerfile
     use: buildx
     build_flag_templates:
       - --label=created={{.Date}}
@@ -75,7 +69,7 @@ dockers:
       - dayzsa-exporter
     image_templates:
       - "ghcr.io/jsirianni/dayzsa-exporter-arm64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
-    dockerfile: ./Dockerfile
+    dockerfile: package/Dockerfile
     use: buildx
     build_flag_templates:
       - --label=created={{.Date}}
