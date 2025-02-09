@@ -147,11 +147,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Go
-        uses: actions/setup-go@v6.1.0
+        uses: actions/setup-go@v5.3.0
         with:
           go-version-file: "go.mod"
 
       - name: Test GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
           args: release --skip=publish --snapshot
