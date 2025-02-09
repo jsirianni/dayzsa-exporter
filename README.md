@@ -55,6 +55,8 @@ The exporter is configured using a configuration file located at
 `/etc/dayzsa/config.yaml`. The configuration file is in YAML format.
 
 ```yaml
+host: localhost
+
 # Collection interval duration
 # e.g. 60s, 1m, 5m, 1h
 interval: 60s
