@@ -37,6 +37,13 @@ nfpms:
           owner: dayzsa
           group: dayzsa
           mode: 0750
+      - src: package/config.yaml
+        dst: /etc/dayzsa/config.yaml
+        type: "config"
+        file_info:
+          owner: dayzsa
+          group: dayzsa
+          mode: 0640
       - dst: /var/lib/dayzsa-exporter
         type: dir
         file_info:
@@ -69,6 +76,8 @@ dockers:
       - "ghcr.io/jsirianni/dayzsa-exporter-amd64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
       - "ghcr.io/jsirianni/dayzsa-exporter-amd64:latest"
     dockerfile: package/Dockerfile
+    extra_files:
+      - package/config.yaml
     use: buildx
     build_flag_templates:
       - --label=created={{.Date}}
@@ -86,6 +95,8 @@ dockers:
       - "ghcr.io/jsirianni/dayzsa-exporter-arm64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
       - "ghcr.io/jsirianni/dayzsa-exporter-arm64:latest"
     dockerfile: package/Dockerfile
+    extra_files:
+      - package/config.yaml
     use: buildx
     build_flag_templates:
       - --label=created={{.Date}}

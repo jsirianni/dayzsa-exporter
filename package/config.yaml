@@ -1,0 +1,17 @@
+# Default configuration
+interval: 60s
+servers:
+  # First Light servers
+  # 
+  # Deer Isle
+  - ip: "50.108.13.235"
+    port: 2424
+  # Deer Isle Hardcore
+  - ip: "50.108.13.235"
+    port: 2324
+  # Namalsk Hardcore
+  - ip: "50.108.13.235"
+    port: 2315
+  # Frostline
+  - ip: "50.108.13.235"
+    port: 27016

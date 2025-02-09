@@ -1,0 +1,4 @@
+interval: 60s
+servers:
+  - ip: "50.108.13.235"
+    port: "2424"
