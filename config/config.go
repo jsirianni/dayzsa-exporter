@@ -28,7 +28,7 @@ func NewFromFile(path string) (*Config, error) {
 		return nil, fmt.Errorf("unmarshal: %w", err)
 	}
 
-	return c, nil
+	return c, c.Validate()
 }
 
 // Config is the configuration for the exporter
@@ -40,11 +40,30 @@ type Config struct {
 
 // Server is a DayZ server endpoint
 type Server struct {
-	IP   string `yaml:"ip"`
-	Port int    `yaml:"port"`
+	Name       string `yaml:"name"`
+	IP         string `yaml:"ip"`
+	Port       int    `yaml:"port"`
+	OverrideIP bool   `yaml:"override_ip"`
 }
 
 // String returns the server as a string
 func (s Server) String() string {
 	return net.JoinHostPort(s.IP, strconv.Itoa(s.Port))
+}
+
+// Validate validates the configuration
+func (c *Config) Validate() error {
+	if c.Interval < time.Second*30 {
+		return fmt.Errorf("interval must be at least 30 seconds: %s", c.Interval)
+	}
+
+	if len(c.Servers) == 0 {
+		return fmt.Errorf("no servers defined")
+	}
+
+	if c.Host == "" {
+		return fmt.Errorf("host is required")
+	}
+
+	return nil
 }

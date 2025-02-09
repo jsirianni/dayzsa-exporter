@@ -9,13 +9,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/jsirianni/dayzsa-exporter/client"
 	"github.com/jsirianni/dayzsa-exporter/config"
+	"github.com/jsirianni/dayzsa-exporter/internal/ifconfig"
 	"github.com/jsirianni/dayzsa-exporter/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
@@ -31,17 +31,18 @@ const (
 )
 
 var (
-	mp = otel.Meter("eventbus/nats")
+	mp = otel.Meter("dayzsa")
 
 	playerCount metric.Int64Gauge
 )
 
 // DZSA is the DayZ Server Agent
 type DZSA struct {
-	client client.Client
-	logger *zap.Logger
-	config *config.Config
-	cancel context.CancelFunc
+	client   client.Client
+	ifconfig ifconfig.Client
+	logger   *zap.Logger
+	config   *config.Config
+	cancel   context.CancelFunc
 }
 
 func main() {
@@ -54,7 +55,7 @@ func main() {
 	configFile := flag.String("config", "/etc/dayzsa/config.yaml", "The path to the configuration file.")
 	flag.Parse()
 
-	config, err := config.NewFromFile(*configFile)
+	conf, err := config.NewFromFile(*configFile)
 	if err != nil {
 		logger.Error("Failed to create config from file", zap.String("path", *configFile), zap.Error(err))
 		os.Exit(1)
@@ -70,10 +71,27 @@ func main() {
 	}
 
 	dzsa := DZSA{
-		client: c,
-		logger: logger,
-		config: config,
-		cancel: cancel,
+		client:   c,
+		ifconfig: ifconfig.New(logger.With(zap.String("module", "ifconfig"))),
+		logger:   logger,
+		config:   conf,
+		cancel:   cancel,
+	}
+
+	enableIfConfig := false
+	for _, s := range dzsa.config.Servers {
+		if s.OverrideIP {
+			enableIfConfig = true
+			break
+		}
+	}
+	if enableIfConfig {
+		dzsa.logger.Info("starting ifconfig dynamic ip detection")
+		err := dzsa.ifconfig.Start(ctx)
+		if err != nil {
+			logger.Error("start ifconfig", zap.Error(err))
+			os.Exit(1)
+		}
 	}
 
 	if err := dzsa.setupMetrics(ctx); err != nil {
@@ -84,31 +102,52 @@ func main() {
 	wg := sync.WaitGroup{}
 	for _, s := range dzsa.config.Servers {
 		wg.Add(1)
-		go func(ip string, port int) {
+		go func(s config.Server) {
 			defer wg.Done()
-			dzsa.watchServer(signalCtx, ip, port)
-		}(s.IP, s.Port)
+			dzsa.watchServer(signalCtx, s)
+		}(s)
 	}
 	wg.Wait()
 
-	dzsa.logger.Info("Client shutdown complete")
+	dzsa.logger.Info("client shutdown complete")
 	cancel()
-	dzsa.logger.Info("Server stopped")
+	dzsa.logger.Info("cerver stopped")
 	os.Exit(0)
 }
 
-func (dzsa *DZSA) watchServer(ctx context.Context, ip string, port int) {
-	clientName := net.JoinHostPort(ip, strconv.Itoa(port))
-	logger := dzsa.logger.With(zap.String("client", clientName))
+func (dzsa *DZSA) watchServer(ctx context.Context, s config.Server) {
+	logger := dzsa.logger.With(
+		zap.String("module", "client"),
+		zap.String("name", s.Name),
+		zap.String("ip", s.IP),
+		zap.Int("port", s.Port),
+		zap.Bool("override_ip", s.OverrideIP),
+	)
 	logger.Info("starting client")
 
 	for {
 		ticker := time.NewTicker(dzsa.config.Interval)
 		select {
 		case <-ticker.C:
+			ip := s.IP
+			port := s.Port
+
+			if s.OverrideIP {
+				ipAddr := dzsa.ifconfig.GetAddress()
+				if ipAddr != "" {
+					logger.Debug("detected public ip for override", zap.String("public_ip", ipAddr))
+					ip = ipAddr
+				}
+			}
+
 			resp, err := dzsa.client.Query(ip, port)
 			if err != nil {
 				logger.Error("query", zap.Error(err))
+				continue
+			}
+
+			if resp.Result.Name == "" {
+				logger.Error("empty server name")
 				continue
 			}
 
