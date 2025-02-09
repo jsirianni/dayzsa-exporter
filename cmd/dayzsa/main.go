@@ -151,7 +151,7 @@ func (dzsa *DZSA) setupMetrics(ctx context.Context) error {
 	}
 
 	go func() {
-		err := httpServer()
+		err := dzsa.httpServer()
 		if err != nil {
 			dzsa.logger.Error("http server", zap.Error(err))
 			dzsa.logger.Error("triggering server shutdown")
@@ -164,9 +164,11 @@ func (dzsa *DZSA) setupMetrics(ctx context.Context) error {
 	return nil
 }
 
-func httpServer() error {
+func (dzsa *DZSA) httpServer() error {
+	addr := net.JoinHostPort(dzsa.config.Host, "9100")
+
 	s := &http.Server{
-		Addr:              "localhost:9100",
+		Addr:              addr,
 		IdleTimeout:       5 * time.Second,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       5 * time.Second,

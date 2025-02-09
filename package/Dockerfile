@@ -5,7 +5,7 @@ RUN \
     mkdir -p /etc/dayzsa && \
     chown -R dayzsa:dayzsa /etc/dayzsa && \
     chmod 750 /etc/dayzsa
-COPY package/config.yaml /etc/dayzsa/config.yaml
+COPY package/config.container.yaml /etc/dayzsa/config.yaml
 
 FROM scratch
 COPY --from=stage /etc/passwd /etc/passwd

@@ -1,3 +1,4 @@
+host: "0.0.0.0"
 interval: 60s
 servers:
   - ip: "50.108.13.235"

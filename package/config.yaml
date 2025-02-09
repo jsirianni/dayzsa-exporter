@@ -1,4 +1,5 @@
 # Default configuration
+host: "localhost"
 interval: 60s
 servers:
   # First Light servers

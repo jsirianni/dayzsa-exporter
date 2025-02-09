@@ -35,6 +35,7 @@ func NewFromFile(path string) (*Config, error) {
 type Config struct {
 	Interval time.Duration `yaml:"interval"`
 	Servers  []Server      `yaml:"servers"`
+	Host     string        `yaml:"host"`
 }
 
 // Server is a DayZ server endpoint

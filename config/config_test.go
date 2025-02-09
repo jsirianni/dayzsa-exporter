@@ -18,6 +18,7 @@ func TestNewFromFile(t *testing.T) {
 			name: "valid.yaml",
 			path: "testdata/valid.yaml",
 			expect: &Config{
+				Host:     "0.0.0.0",
 				Interval: 60 * time.Second,
 				Servers: []Server{
 					{

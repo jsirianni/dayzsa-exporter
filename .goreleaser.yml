@@ -77,7 +77,7 @@ dockers:
       - "ghcr.io/jsirianni/dayzsa-exporter-amd64:latest"
     dockerfile: package/Dockerfile
     extra_files:
-      - package/config.yaml
+      - package/config.container.yaml
     use: buildx
     build_flag_templates:
       - --label=created={{.Date}}
@@ -96,7 +96,7 @@ dockers:
       - "ghcr.io/jsirianni/dayzsa-exporter-arm64:latest"
     dockerfile: package/Dockerfile
     extra_files:
-      - package/config.yaml
+      - package/config.container.yaml
     use: buildx
     build_flag_templates:
       - --label=created={{.Date}}
