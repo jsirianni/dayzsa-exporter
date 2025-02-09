@@ -4,4 +4,65 @@
 
 # dayzsa-exporter
 
-Metrics exporter for Dayz SA launcher
+Dayzsa Exporter is a Prometheus exporter for DayZ Standalone servers. It depends
+on [dayzsalauncher.com](https://dayzsalauncher.com/#/servercheck).
+
+Metrics are exposed over HTTP at `http://localhost:9100`.
+
+## Installation
+
+### Linux (Systemd)
+
+The exporter can be installed on most Linux distributions. You can download
+the latest release from the [releases page](https://github.com/jsirianni/dayzsa-exporter/releases).
+
+RPM packages can be installed using the following commands:
+
+```bash
+sudo dnf install dayzsa-exporter-amd64.rpm
+```
+
+Debian packages can be installed using the following commands:
+
+```bash
+sudo apt-get install -f ./dayzsa-exporter-amd64.deb
+```
+
+Once installed, the exporter can be started using the following command:
+
+```bash
+sudo systemctl enable dayzsa-exporter
+sudo systemctl start dayzsa-exporter
+```
+
+You can view the logs with Journalctl:
+
+```bash
+sudo journalctl -u dayzsa-exporter -f
+```
+
+### Docker
+
+The exporter can be run as a Docker container.
+
+```bash
+docker run -d -p 9100:9100 ghcr.io/jsirianni/dayzsa-exporter:latest
+```
+
+## Configuration
+
+Coming soon.
+
+## Usage
+
+Once installed, you can test with cURL
+
+```bash
+curl -s localhost:9100 | grep -v '#' | grep dayzsa_exporter
+```
+
+### Monitor with Bindplane
+
+You can use [Bindplane](https://bindplane.com/solutions) to monitor
+your exporter. The [Prometheus Source](https://bindplane.com/docs/resources/sources/prometheus)
+can be used to collect metrics from the exporter.

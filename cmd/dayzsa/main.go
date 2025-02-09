@@ -152,6 +152,7 @@ func (dzsa *DZSA) watchServer(ctx context.Context, ip string, port int) {
 			resp, err := dzsa.client.Query(ip, port)
 			if err != nil {
 				logger.Error("query", zap.Error(err))
+				continue
 			}
 
 			playerCount.Record(ctx,
