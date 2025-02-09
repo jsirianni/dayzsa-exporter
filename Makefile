@@ -31,3 +31,7 @@ test:
 .PHONY: release-test
 release-test:
 	goreleaser release --snapshot --skip=publish --clean
+
+.PHONY: gomoddownload
+gomoddownload:
+	go mod download
