@@ -5,6 +5,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -63,9 +64,26 @@ func (c *defaultClient) Query(ip string, port int) (*model.QueryResponse, error)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response: %w", err)
+	}
+
+	rawReq := make(map[string]any)
+	if err := json.Unmarshal(b, &rawReq); err != nil {
+		return nil, fmt.Errorf("decode request: %w", err)
+	}
+	if _, ok := rawReq["error"]; ok {
+		return nil, fmt.Errorf("error in request: %s", rawReq["error"])
+	}
+
 	queryResponse := &model.QueryResponse{}
-	if err := json.NewDecoder(resp.Body).Decode(&queryResponse); err != nil {
-		return nil, fmt.Errorf("decode response: %w", err)
+	if err := json.Unmarshal(b, queryResponse); err != nil {
+		return nil, fmt.Errorf("unmarshal response: %w", err)
 	}
 
 	return queryResponse, nil

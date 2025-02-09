@@ -57,3 +57,9 @@ type Result struct {
 	Vac              bool     `json:"vac"`
 	Version          string   `json:"version"`
 }
+
+// QueryError is the error response from the DZSA API
+type QueryError struct {
+	Status int    `json:"status"`
+	Error  string `json:"error"`
+}
