@@ -18,7 +18,7 @@ const (
 
 // NewFromFile reads a configuration from a file
 func NewFromFile(path string) (*Config, error) {
-	b, err := os.ReadFile(path)
+	b, err := os.ReadFile(path) // #nosec G304 - Path is configured by the user
 	if err != nil {
 		return nil, fmt.Errorf("read file: %s: %w", path, err)
 	}
