@@ -51,7 +51,25 @@ docker run -d -p 9100:9100 ghcr.io/jsirianni/dayzsa-exporter:latest
 
 ## Configuration
 
-Coming soon.
+The exporter is configured using a configuration file located at
+`/etc/dayzsa/config.yaml`. The configuration file is in YAML format.
+
+```yaml
+# Collection interval duration
+# e.g. 60s, 1m, 5m, 1h
+interval: 60s
+
+# One or more servers to monitor
+servers:
+  - ip: "50.108.13.235"
+    port: 2424
+  - ip: "50.108.13.235"
+    port: 2324
+  - ip: "50.108.13.235"
+    port: 2315
+  - ip: "50.108.13.235"
+    port: 27016
+```
 
 ## Usage
 

@@ -76,6 +76,8 @@ dockers:
       - "ghcr.io/jsirianni/dayzsa-exporter-amd64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
       - "ghcr.io/jsirianni/dayzsa-exporter-amd64:latest"
     dockerfile: package/Dockerfile
+    extra_files:
+      - package/config.yaml
     use: buildx
     build_flag_templates:
       - --label=created={{.Date}}
@@ -93,6 +95,8 @@ dockers:
       - "ghcr.io/jsirianni/dayzsa-exporter-arm64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
       - "ghcr.io/jsirianni/dayzsa-exporter-arm64:latest"
     dockerfile: package/Dockerfile
+    extra_files:
+      - package/config.yaml
     use: buildx
     build_flag_templates:
       - --label=created={{.Date}}
