@@ -1,0 +1,98 @@
+version: 2
+
+builds:
+  - id: dayzsa-exporter
+    env:
+      - CGO_ENABLED=0
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    main: ./cmd/dayzsa/
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    binary: dayzsa-exporter
+    flags:
+      - -v
+      - -trimpath
+
+nfpms:
+  - id: dayzsa-exporter
+    package_name: dayzsa-exporter
+    builds:
+      - dayzsa-exporter
+    homepage: https://github.com/jsirianni/dayzsa-exporter
+    description: Metrics exporter for DayzSA server
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+    contents:
+      - dst: /etc/dayzsa
+        type: dir
+        file_info:
+          owner: dayzsa
+          group: dayzsa
+          mode: 0750
+      - dst: /var/lib/dayzsa-exporter
+        type: dir
+        file_info:
+          owner: dayzsa
+          group: dayzsa
+          mode: 0750
+      - src: package/dayzsa-exporter.service
+        dst: /usr/lib/systemd/system/dayzsa-exporter.service
+        type: "config"
+        file_info:
+          owner: root
+          group: root
+          mode: 0640
+    scripts:
+      preremove: "./package/preremove.sh"
+      postremove: "./package/postremove.sh"
+      preinstall: "./package/preinstall.sh"
+      postinstall: ./package/postinstall.sh
+
+dockers:
+  - id: amd64
+    goos: linux
+    goarch: amd64
+    ids:
+      - dayzsa-exporter
+    image_templates:
+      - "ghcr.io/jsirianni/dayzsa-exporter-amd64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+    dockerfile: package/Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --label=created={{.Date}}
+      - --label=title={{.ProjectName}}
+      - --label=revision={{.FullCommit}}
+      - --label=version={{.Version}}
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.source=https://github.com/jsirianni/dayzsa-exporter
+  - id: arm64
+    goos: linux
+    goarch: arm64
+    ids:
+      - dayzsa-exporter
+    image_templates:
+      - "ghcr.io/jsirianni/dayzsa-exporter-arm64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+    dockerfile: package/Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --label=created={{.Date}}
+      - --label=title={{.ProjectName}}
+      - --label=revision={{.FullCommit}}
+      - --label=version={{.Version}}
+      - --platform=linux/arm64
+      - --label=org.opencontainers.image.source=https://github.com/jsirianni/dayzsa-exporter
+
+docker_manifests:
+  - name_template: "ghcr.io/jsirianni/dayzsa-exporter:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+    image_templates:
+      - "ghcr.io/jsirianni/dayzsa-exporter-amd64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+      - "ghcr.io/jsirianni/dayzsa-exporter-arm64:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+
+release:
+  draft: false
+  prerelease: false
