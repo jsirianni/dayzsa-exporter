@@ -10,12 +10,12 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/jsirianni/dayzsa-exporter/client"
+	"github.com/jsirianni/dayzsa-exporter/config"
 	"github.com/jsirianni/dayzsa-exporter/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
@@ -34,31 +34,14 @@ var (
 	mp = otel.Meter("eventbus/nats")
 
 	playerCount metric.Int64Gauge
-
-	defaultServers = []string{
-		// deer isle
-		"50.108.13.235:2424",
-		// deer isl hardcore
-		"50.108.13.235:2324",
-		// namaslk hardcore
-		"50.108.13.235:2315",
-		// frostline
-		"50.108.13.235:27016",
-	}
 )
 
 // DZSA is the DayZ Server Agent
 type DZSA struct {
-	client   client.Client
-	logger   *zap.Logger
-	interval time.Duration
-	servers  []server
-	cancel   context.CancelFunc
-}
-
-type server struct {
-	ip   string
-	port int
+	client client.Client
+	logger *zap.Logger
+	config *config.Config
+	cancel context.CancelFunc
 }
 
 func main() {
@@ -68,38 +51,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	defaultServers := strings.Join(defaultServers, ",")
-
-	intervalFlag := flag.Duration("collection-interval", CollectionInterval, "The interval at which to collect data from the DayZ server.")
-	serversFlag := flag.String("servers", defaultServers, "A comma separated list of DayZ servers to query. In the form of ip:port.")
+	configFile := flag.String("config", "/etc/dayzsa/config.yaml", "The path to the configuration file.")
 	flag.Parse()
 
-	if serversFlag == nil {
-		logger.Error("servers flag is required")
+	config, err := config.NewFromFile(*configFile)
+	if err != nil {
+		logger.Error("Failed to create config from file", zap.String("path", *configFile), zap.Error(err))
 		os.Exit(1)
-	}
-
-	interval := *intervalFlag
-
-	servers := []server{}
-	for _, s := range strings.Split(*serversFlag, ",") {
-		host, port, err := net.SplitHostPort(s)
-		if err != nil {
-			logger.Error("invalid server", zap.String("server", s))
-			os.Exit(1)
-		}
-
-		portNum, err := strconv.Atoi(port)
-		if err != nil {
-			logger.Error("invalid port", zap.String("port", port))
-			os.Exit(1)
-		}
-
-		s := server{
-			ip:   host,
-			port: portNum,
-		}
-		servers = append(servers, s)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -112,11 +70,10 @@ func main() {
 	}
 
 	dzsa := DZSA{
-		client:   c,
-		logger:   logger,
-		interval: interval,
-		servers:  servers,
-		cancel:   cancel,
+		client: c,
+		logger: logger,
+		config: config,
+		cancel: cancel,
 	}
 
 	if err := dzsa.setupMetrics(ctx); err != nil {
@@ -125,12 +82,12 @@ func main() {
 	}
 
 	wg := sync.WaitGroup{}
-	for _, s := range dzsa.servers {
+	for _, s := range dzsa.config.Servers {
 		wg.Add(1)
 		go func(ip string, port int) {
 			defer wg.Done()
 			dzsa.watchServer(signalCtx, ip, port)
-		}(s.ip, s.port)
+		}(s.IP, s.Port)
 	}
 	wg.Wait()
 
@@ -146,7 +103,7 @@ func (dzsa *DZSA) watchServer(ctx context.Context, ip string, port int) {
 	logger.Info("starting client")
 
 	for {
-		ticker := time.NewTicker(dzsa.interval)
+		ticker := time.NewTicker(dzsa.config.Interval)
 		select {
 		case <-ticker.C:
 			resp, err := dzsa.client.Query(ip, port)

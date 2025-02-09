@@ -37,6 +37,13 @@ nfpms:
           owner: dayzsa
           group: dayzsa
           mode: 0750
+      - src: package/config.yaml
+        dst: /etc/dayzsa/config.yaml
+        type: "config"
+        file_info:
+          owner: dayzsa
+          group: dayzsa
+          mode: 0640
       - dst: /var/lib/dayzsa-exporter
         type: dir
         file_info:
