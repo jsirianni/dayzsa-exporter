@@ -152,6 +152,7 @@ func (dzsa *DZSA) watchServer(ctx context.Context, ip string, port int) {
 			resp, err := dzsa.client.Query(ip, port)
 			if err != nil {
 				logger.Error("query", zap.Error(err))
+				continue
 			}
 
 			playerCount.Record(ctx,
@@ -163,6 +164,8 @@ func (dzsa *DZSA) watchServer(ctx context.Context, ip string, port int) {
 					),
 				),
 			)
+
+			logger.Debug("player count", zap.Int("count", resp.Result.Players))
 
 		case <-ctx.Done():
 			logger.Info("shutting down")
@@ -229,7 +232,7 @@ func setupLogger() (*zap.Logger, error) {
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderConfig),
 		zapcore.AddSync(os.Stdout),
-		zap.InfoLevel,
+		zap.DebugLevel,
 	)
 
 	logger := zap.New(core)
