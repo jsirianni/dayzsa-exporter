@@ -34,6 +34,7 @@ var (
 	mp = otel.Meter("dayzsa")
 
 	playerCount metric.Int64Gauge
+	upStatus    metric.Int64Gauge
 )
 
 // DZSA is the DayZ Server Agent
@@ -143,13 +144,41 @@ func (dzsa *DZSA) watchServer(ctx context.Context, s config.Server) {
 			resp, err := dzsa.client.Query(ip, port)
 			if err != nil {
 				logger.Error("query", zap.Error(err))
+				// Record up status as 0 (down) when query fails
+				upStatus.Record(ctx, 0,
+					metric.WithAttributeSet(
+						attribute.NewSet(
+							attribute.String("name", s.Name),
+							attribute.String("endpoint", net.JoinHostPort(ip, fmt.Sprintf("%d", port))),
+						),
+					),
+				)
 				continue
 			}
 
 			if resp.Result.Name == "" {
 				logger.Error("empty server name")
+				// Record up status as 0 (down) when server name is empty
+				upStatus.Record(ctx, 0,
+					metric.WithAttributeSet(
+						attribute.NewSet(
+							attribute.String("name", s.Name),
+							attribute.String("endpoint", net.JoinHostPort(ip, fmt.Sprintf("%d", port))),
+						),
+					),
+				)
 				continue
 			}
+
+			// Record up status as 1 (up) when query succeeds
+			upStatus.Record(ctx, 1,
+				metric.WithAttributeSet(
+					attribute.NewSet(
+						attribute.String("name", resp.Result.Name),
+						attribute.String("endpoint", resp.Result.Endpoint.String()),
+					),
+				),
+			)
 
 			playerCount.Record(ctx,
 				int64(resp.Result.Players),
@@ -187,6 +216,13 @@ func (dzsa *DZSA) setupMetrics(ctx context.Context) error {
 	)
 	if err != nil {
 		return fmt.Errorf("create player count gauge: %w", err)
+	}
+
+	upStatus, err = mp.Int64Gauge(
+		"dayz.up",
+	)
+	if err != nil {
+		return fmt.Errorf("create up status gauge: %w", err)
 	}
 
 	go func() {
